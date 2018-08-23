@@ -36,8 +36,15 @@ def simulate_draft(rankFrame, fantasy_players, num_rounds):
     team_rosters = [[] for x in range(fantasy_players.shape[0])]
         
     drafted_players = set()
+    flip = False
     for draft_round in range(num_rounds):
-        for player in range(fantasy_players.shape[0]):
+        for player_index in range(fantasy_players.shape[0]):
+            if flip:
+                player = fantasy_players.shape[0] - player_index - 1
+            else:
+                player = player_index
+            
+#             print(draft_round, player)
             # retrieve strategy
             round_strategy = fantasy_players[player,draft_round, :]
             player_score_tuples = []
@@ -54,6 +61,10 @@ def simulate_draft(rankFrame, fantasy_players, num_rounds):
             
             team_rosters[player].append(drafted_player)
             drafted_players.add(drafted_player[0])
+        if flip == False:
+            flip = True
+        else:
+            flip = False
     return team_rosters
 
 def score_roster(playerScoreDict, fantasy_rosters):
@@ -95,7 +106,7 @@ def score_roster(playerScoreDict, fantasy_rosters):
         fantasy_team_performances.append(performance)
         
     return fantasy_team_performances, fantasy_lineups
-   
+  
 def update_players(fantasy_players, fantasy_team_performances, num_players, mutation_rate=1.0, num_survivors = 4):
     '''
     Given a list of fantasy players with different strategies and the performance of each strategy,
@@ -112,19 +123,18 @@ def update_players(fantasy_players, fantasy_team_performances, num_players, muta
     # recombination
     for player in range(num_players):
         new_player = []
+        parent1 = np.random.randint(playoff_players.shape[0])
+        parent2 = np.random.randint(playoff_players.shape[0])
         for draft_round in range(fantasy_players.shape[1]):
-            parent1 = np.random.randint(fantasy_players.shape[0])
-            parent2 = np.random.randint(fantasy_players.shape[0])
-
-            mean_chromosome = (fantasy_players[parent1,draft_round,:] + fantasy_players[parent2,draft_round,:])/2
+            mean_chromosome = (playoff_players[parent1,draft_round,:] + playoff_players[parent2,draft_round,:])/2
             
             weights = mutation_rate * np.random.random(num_positions) # initialize random weights
             mutated_chromosome = mean_chromosome +  weights
-            normed_chromosome = mean_chromosome/np.sum(mean_chromosome) # normalize so weights sum to 1
+            normed_chromosome = mutated_chromosome/np.sum(mutated_chromosome) # normalize so weights sum to 1
             
             new_player.append(normed_chromosome)
 
         new_players.append(new_player)
     
     return np.array(new_players)
-    
+     
